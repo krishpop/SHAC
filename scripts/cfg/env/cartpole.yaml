@@ -4,7 +4,7 @@ config:
   _target_: shac.envs.CartPoleSwingUpEnv
   render: ${general.render}
   device: ${general.device}
-  num_envs: 1024
+  num_envs: 512
   seed: ${general.seed}
   episode_length: 240
   no_grad: ${general.play} # ${resolve_default:general.play,False}
