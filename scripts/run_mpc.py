@@ -7,11 +7,11 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 
 
-@hydra.main(config_path="cfg", config_name="config")
-def main(cfg: DictConfig) -> None:
+@hydra.main(config_path="cfg", config_name="mpc_config")
+def main(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
-    env = instantiate(cfg.env.config)
-    eval_env = instantiate(cfg.env.config, num_envs=1)
+    env = instantiate(cfg.env.config, no_grad=True)
+    eval_env = instantiate(cfg.env.config, num_envs=1, no_grad=True, render=cfg.general.render)
     policy = instantiate(cfg.alg.config.policy, num_actions=env.num_acts)
     planner = instantiate(cfg.alg.config.planner, env=env, policy=policy)
     rewards = run_planner(planner, eval_env)

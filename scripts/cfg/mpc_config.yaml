@@ -1,0 +1,34 @@
+defaults:
+  - _self_
+  - env: cartpole
+  - alg: mpc
+
+hydra:
+  sweep:
+    dir: ${env:HOME}/checkpoints/${exp_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${wandb.sweep_name_prefix}-${hydra.job.num}
+
+exp_name: mpc_benchmarks
+
+id: ${hydra.job.id}
+resume_model: null
+
+general:
+  num_envs: 256
+  play: True  # sets no_grad=True
+  logdir: logs/tmp/mpc/
+  save_interval: False
+  render: False
+  device: cuda:0
+  run_wandb: True
+  seed: 0
+  train: True
+
+# env-specific defaults for different algs
+env:
+  gamma: 0.99
+
+wandb:
+  project: shac
+  group: ${exp_name}
+  sweep_name_prefix: ${alg.diff_env.name}_${alg.name}-run

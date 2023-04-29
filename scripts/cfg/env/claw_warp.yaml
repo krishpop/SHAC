@@ -1,22 +1,21 @@
+name: warp_claw
 config:
-    _target_: shac.envs.HopperEnv
+  _target_: dmanip.envs.ClawWarpEnv
+  config:
+    _target_: dmanip.config.ClawWarpConfig
     render: ${general.render}
     device: ${general.device}
-    num_envs: 512
+    num_envs: ${resolve_default:1024,${general.num_envs}}
     seed: ${general.seed}
-    episode_length: 1000
-    no_grad: False
+    episode_length: 600
+    no_grad: ${general.play}
     stochastic_init: False
-    MM_caching_frequency: 4
-    early_termination: False
-    
+
 shac:
   actor_lr: 1e-3
   critic_lr: 1e-2
   max_epochs: 500
   betas: (0.7, 0.95)
-  actor_mlp:
-    units: [128, 128]
 
 ppo:
   max_epochs: 500 
