@@ -4,7 +4,7 @@ config:
     __target__: shac.envs.AntEnv
     render: ${general.render}
     device: ${general.device}
-    num_envs: 64
+    num_envs: ${resolve_default:64,${general.num_envs}}
     stochastic_env: True
     seed: ${general.seed}
     episode_length: 1000

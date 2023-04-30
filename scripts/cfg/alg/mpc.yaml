@@ -8,5 +8,4 @@ config:
     num_actions: ${env.num_actions}
     horizon: 0.25
     dt: ${eval:"(1./60.)"}
-    max_steps: ${env.config.episode_length}    
     policy_type: "zero"

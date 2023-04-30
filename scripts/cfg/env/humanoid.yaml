@@ -1,14 +1,14 @@
 name: df_humanoid
+
 config:  
-  diff_env:
-    name: shac.envs.HumanoidEnv
-    render: ${general.render}
-    device: ${general.device}
-    num_envs: 64
-    stochastic_env: True
-    seed: ${general.seed}
-    episode_length: 1000
-    MM_caching_frequency: 48
+  _target_: shac.envs.HumanoidEnv
+  render: ${general.render}
+  device: ${general.device}
+  num_envs: ${resolve_default:64,${general.num_envs}}
+  stochastic_env: True
+  seed: ${general.seed}
+  episode_length: 1000
+  MM_caching_frequency: 48
 
 actor_mlp:
   units: [256, 128]

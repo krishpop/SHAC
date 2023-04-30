@@ -25,6 +25,7 @@ general:
   train: True
   checkpoint:
   multi_gpu: False
+  num_envs: 
 
 
 # env-specific defaults for different algs

@@ -1,7 +1,14 @@
 import hydra
+import warp as wp
+
+wp.config.mode = "debug"
+wp.config.print_launches = True
+wp.config.verify_cuda = True
+
 from tqdm import trange
-import shac.algorithms.mpc
+from shac.algorithms.mpc import Policy, Planner
 import matplotlib.pyplot as plt
+
 from shac.utils import custom_resolvers
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
@@ -9,11 +16,13 @@ from omegaconf import DictConfig, OmegaConf
 
 @hydra.main(config_path="cfg", config_name="mpc_config")
 def main(cfg: DictConfig):
-    print(OmegaConf.to_yaml(cfg))
-    env = instantiate(cfg.env.config, no_grad=True)
-    eval_env = instantiate(cfg.env.config, num_envs=1, no_grad=True, render=cfg.general.render)
-    policy = instantiate(cfg.alg.config.policy, num_actions=env.num_acts)
-    planner = instantiate(cfg.alg.config.planner, env=env, policy=policy)
+    env = instantiate(cfg.env.config)
+    cfg.general.num_envs = 1
+    cfg.general.render = True
+    eval_env = instantiate(cfg.env.config)
+
+    policy: Policy = instantiate(cfg.alg.config.policy, num_actions=env.num_acts, max_steps=env.episode_length)
+    planner: Planner = instantiate(cfg.alg.config.planner, env=env, policy=policy)
     rewards = run_planner(planner, eval_env)
 
     plt.plot(rewards)

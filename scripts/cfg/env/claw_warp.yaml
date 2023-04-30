@@ -10,6 +10,11 @@ config:
     episode_length: 600
     no_grad: ${general.play}
     stochastic_init: False
+    rew_kw:
+      _target_: dmanip.config.RewardConfig
+      c_finger: 0.2
+      c_q: 100
+      c_act: 0.001
 
 shac:
   actor_lr: 1e-3
