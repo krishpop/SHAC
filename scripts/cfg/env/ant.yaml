@@ -1,17 +1,19 @@
 name: df_ant
 config:
   diff_env:
-    __target__: shac.envs.AntEnv
+    _target_: shac.envs.AntEnv
     render: ${general.render}
     device: ${general.device}
     num_envs: ${resolve_default:64,${general.num_envs}}
-    stochastic_env: True
+    stochastic_init: True
     seed: ${general.seed}
     episode_length: 1000
     MM_caching_frequency: 16
 
-actor_mlp:
-  units: [128, 64, 64]
+
+shac:
+  actor_mlp:
+    units: [128, 64, 64]
 
 actor_lr: 2e-3
 critic_lr: 2e-3

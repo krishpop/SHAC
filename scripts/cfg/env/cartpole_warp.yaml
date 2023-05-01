@@ -1,4 +1,5 @@
 name: warp_cartpole
+
 config:
   _target_: shac.envs.CartPoleSwingUpWarpEnv
   render: ${general.render}
