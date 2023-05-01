@@ -3,11 +3,6 @@ defaults:
   - env: cartpole
   - alg: mpc
 
-hydra:
-  sweep:
-    dir: ${env:HOME}/checkpoints/${exp_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
-    subdir: ${wandb.sweep_name_prefix}-${hydra.job.num}
-
 exp_name: mpc_benchmarks
 
 id: ${hydra.job.id}
@@ -31,4 +26,4 @@ env:
 wandb:
   project: shac
   group: ${exp_name}
-  sweep_name_prefix: ${alg.diff_env.name}_${alg.name}-run
+  sweep_name_prefix: ${env.name}_${alg.name}-run

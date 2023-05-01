@@ -38,7 +38,10 @@ class SHAC:
 
     def __init__(self, cfg: DictConfig):
         seeding(cfg.general.seed)
-        self.env = instantiate(cfg.env.config)
+        if "diff_env" not in cfg.env.config:
+            self.env = instantiate(cfg.env.config)
+        else:
+            self.env = instantiate(cfg.env.config.diff_env)
 
         print("num_envs = ", self.env.num_envs)
         print("num_actions = ", self.env.num_actions)

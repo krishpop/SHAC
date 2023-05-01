@@ -1,0 +1,11 @@
+name: "warp_allegro"
+
+config:
+  _target_: dmanip.envs.allegro_env.AllegroWarpEnv
+  config:
+    _target_: dmanip.config.AllegroWarpConfig
+    num_envs: ${resolve_default:16,${general.num_envs}}
+    no_grad: True
+    stochastic_init: True
+    episode_length: 256
+    goal_path: goal_traj-sliding.npy

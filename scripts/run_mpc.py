@@ -1,9 +1,9 @@
 import hydra
 import warp as wp
 
-wp.config.mode = "debug"
-wp.config.print_launches = True
-wp.config.verify_cuda = True
+# wp.config.mode = "debug"
+# wp.config.print_launches = True
+# wp.config.verify_cuda = True
 
 from tqdm import trange
 from shac.algorithms.mpc import Policy, Planner

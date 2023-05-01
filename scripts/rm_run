@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+import argparse
+from isaacgymenvs.utils.wandb_utils import delete_last_run
+
+parser = argparse.ArgumentParser()
+parser.add_argument("run_id", default="last", type=str)
+args = parser.parse_args()
+run_id = args.run_id
+
+print(f"delete_last_run({run_id}) status:", delete_last_run(run_id))

@@ -42,15 +42,11 @@ def train(cfg: DictConfig):
 
         resume_model = cfg.resume_model
         if os.path.exists("exp_config.yaml"):
-            old_config = yaml.load(open("exp_config.yaml", "r"))
+            old_config = yaml.load(open("exp_config.yaml", "r"), Loader=yaml.SafeLoader)
             params, wandb_id = old_config["params"], old_config["wandb_id"]
-            run = create_wandb_run(
-                cfg.wandb, params, wandb_id, run_wandb=cfg.general.run_wandb
-            )
+            run = create_wandb_run(cfg.wandb, params, wandb_id, run_wandb=cfg.general.run_wandb)
             resume_model = "restore_checkpoint.zip"
-            assert os.path.exists(
-                resume_model
-            ), "restore_checkpoint.zip does not exist!"
+            assert os.path.exists(resume_model), "restore_checkpoint.zip does not exist!"
         else:
             defaults = HydraConfig.get().runtime.choices
             params = yaml.safe_load(cfg_yaml)
@@ -63,8 +59,7 @@ def train(cfg: DictConfig):
             print("Config:")
             print(cfg_yaml)
 
-        if cfg.alg.name.startswith("shac"):
-            alg_cls = SHAC if cfg.alg.name == "shac" else SHAC2
+        if cfg.alg.name == "shac":
             cfg_train = yaml.safe_load(cfg_yaml)
             if cfg.general.play:
                 cfg_train["params"]["config"]["num_actors"] = (
@@ -73,21 +68,16 @@ def train(cfg: DictConfig):
             if not cfg.general.no_time_stamp:
                 cfg.general.logdir = os.path.join(cfg.general.logdir, get_time_stamp())
 
-            cfg_train["params"]["general"] = yaml.safe_load(
-                OmegaConf.to_yaml(cfg.general)
-            )
+            cfg_train["params"]["general"] = yaml.safe_load(OmegaConf.to_yaml(cfg.general))
             print(cfg_train["params"]["general"])
-            if alg_cls == SHAC2:
-                traj_optimizer = alg_cls(cfg)
-            else:
-                traj_optimizer = alg_cls(cfg_train)
+            traj_optimizer = SHAC(cfg_train)
+        elif cfg.alg.name == "shac2":
+            traj_optimizer = SHAC2(cfg)
 
-            if not cfg.general.play:
-                traj_optimizer.train()
-            else:
-                traj_optimizer.play(cfg_train)
+        if not cfg.general.play:
+            traj_optimizer.train()
         else:
-            raise NotImplementedError
+            traj_optimizer.play(cfg_train)
         wandb.finish()
     except:
         traceback.print_exc(file=open("exception.log", "w"))
