@@ -10,6 +10,7 @@ critic_config:
   activation: elu
 actor_lr: ${resolve_child:2e-3,${env.shac},actor_lr}
 critic_lr: ${resolve_child:2e-3,${env.shac},critic_lr}
+lambd_lr: 1e-4
 h_lr: 1e-4
 lr_schedule: linear
 obs_rms: True
