@@ -4,11 +4,11 @@ defaults:
     - action_penalty
     - object_pos_err
 
-name: claw_env
+name: warp_claw_old
 
 config:
   _target_: dmanip.envs.ClawWarpEnv
-  num_envs: 128
+  num_envs: 512
   episode_length: 500
   render: ${general.render}
   no_grad: ???
@@ -18,14 +18,17 @@ config:
   #   object_joint_pos_err: ${...rewards.object_joint_pos_err}
   stochastic_init: true
   seed: ${general.seed}
-  action_type: ${action:position}
+  action_type: ${action:torque}
+  action_strength: 10.0
   object_type: ${object:octprism}
   goal_type: ${goal:orientation}
   reward_type: ${reward:delta}
+  debug: ${debug}
 
 shac:
-  actor_lr: 1e-3
-  critic_lr: 1e-2
+  steps_num: 16
+  actor_lr: 2e-3
+  critic_lr: 4e-3
   actor: ActorStochasticMLP # ActorDeterministicMLP
   actor_mlp:
     units: [128, 64, 32]
