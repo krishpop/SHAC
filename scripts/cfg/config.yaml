@@ -26,5 +26,5 @@ env:
 
 wandb:
   project: shac
-  entity: dmanip-rss
+  entity: imgeorgiev
   group: ${exp_name}

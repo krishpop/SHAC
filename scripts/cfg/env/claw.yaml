@@ -7,8 +7,8 @@ defaults:
 name: warp_claw_old
 
 config:
-  _target_: dmanip.envs.ClawWarpEnv
-  num_envs: 512
+  _target_: dmanip.envs.ClawWarpEnvOld
+  num_envs: 64
   episode_length: 500
   render: ${general.render}
   no_grad: ???
@@ -23,30 +23,47 @@ config:
   object_type: ${object:octprism}
   goal_type: ${goal:orientation}
   reward_type: ${reward:delta}
-  debug: ${debug}
+  # debug: ${debug}
 
 shac:
   steps_num: 16
   actor_lr: 2e-3
   critic_lr: 4e-3
-  actor: ActorStochasticMLP # ActorDeterministicMLP
   actor_mlp:
     units: [128, 64, 32]
-    activation: elu
-
-  critic: CriticMLP
   critic_mlp:
     units: [64, 64]
-    activation: elu
 
+ahac:
+  actor_lr: 2e-3
+  critic_lr: 4e-3
+  max_epochs: 500
+  actor_mlp:
+    units: [128, 64, 32]
+  critic_mlp:
+    units: [64, 64]
+  save_interval: 100
+
+ahac5:
+  actor_lr: 2e-3
+  critic_lr: 4e-3
+  h_lr: 1e-2
+  max_epochs: 500
+  actor_mlp:
+    units: [128, 64, 32]
+  critic_mlp:
+    units: [64, 64]
+  save_interval: 100
 
 ppo:
   max_epochs: 500
-  minibatch_size: 1920
+  minibatch_size: 512
+  num_actors: 64
+  horizon_length: 32
   save_interval: 100
-  save_best_after: 50
-  num_actors: 32
-  steps_num: 240
+  save_best_after: 100
+  actor_mlp:
+    units: [128, 64, 32]
 
 player:
   deterministic: True

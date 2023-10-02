@@ -73,7 +73,7 @@ class AHAC2:
         # sanity check parameters
         assert steps_num > steps_min > 0
         assert max_epochs > 0
-        assert actor_lr >= 0
+        assert actor_lr > 0
         assert critic_lr >= 0
         assert lr_schedule in ["linear", "constant"]
         assert 0 < gamma <= 1
@@ -151,8 +151,6 @@ class AHAC2:
         self.all_params = list(self.actor.parameters()) + list(self.critic.parameters())
 
         # for logging purposes
-        self.jacs = []
-        self.cfs = []
         self.early_terms = []
         self.conatct_truncs = []
         self.horizon_truncs = []
@@ -226,7 +224,6 @@ class AHAC2:
         self.acc_jacobians = accumulate_jacobians
         self.log_jacobians = log_jacobians
         self.eval_runs = eval_runs
-        self.last_steps = 0
         self.last_log_steps = 0
 
         # average meter
@@ -241,7 +238,7 @@ class AHAC2:
         }
 
         # temporary load policy
-        # path = "/home/ignat/git/SHAC/scripts/multirun/2023-08-24/18-43-28/14/logs/best_policy.pt"
+        # path = "/home/ignat/AHAC2_HopperEnvpolicy_iter400_reward5150.342.pt"
         # self.load(path, actor=False)
 
         # timer
@@ -259,8 +256,8 @@ class AHAC2:
         next_values = torch.zeros(
             (self.steps_num + 1, self.num_envs), dtype=torch.float32, device=self.device
         )
-        jac_buffer = torch.zeros(
-            (self.steps_num + 1, self.num_envs), dtype=torch.float32
+        cfs_buffer = torch.zeros(
+            (self.steps_num + 1, self.num_envs), dtype=torch.float32, device=self.device
         )
 
         actor_loss = torch.tensor(0.0, dtype=torch.float32, device=self.device)
@@ -326,30 +323,24 @@ class AHAC2:
             # uses contact forces since they are always available
             cfs = info["contact_forces"]
             acc = info["accelerations"]
+            acc[acc > 0] = torch.clip(acc[acc > 0], 1.0, torch.inf)
+            acc[acc < 0] = torch.clip(acc[acc < 0], -torch.inf, -1.0)
             cfs_normalised = torch.where(acc != 0.0, cfs / acc, torch.zeros_like(cfs))
-            cf_norm = torch.norm(cfs_normalised, dim=(1, 2))
-            jac_norm = (
-                torch.norm(info["jacobian"], dim=(1, 2)) if "jacobian" in info else None
-            )
-            norm = jac_norm if jac_norm else cf_norm  # shape Nx1
-            contact_trunc = norm > self.contact_th
+            cfs_buffer[i] = torch.norm(cfs_normalised, dim=(-2, -1)).squeeze()
+            contact_trunc = cfs_buffer[i] > self.contact_th
+            # print("cfs_buffer", cfs_buffer.shape)
+            # print("cfs_buffer", cfs_buffer[:, rollout_len - 1].shape)
+            # print("contact_trunc", contact_trunc.shape)
             if self.acc_jacobians:
-                jac_buffer[i + 1] = jac_buffer[i] + norm
-                contact_trunc = jac_buffer[i + 1] > self.contact_th
+                contact_trunc = torch.sum(cfs_buffer, dim=0) > self.contact_th
             # ensure that we're not truncating envs before the minimum step size
             contact_trunc = contact_trunc & (rollout_len >= self.steps_min)
 
-            assert len(contact_trunc) == self.num_envs
+            assert contact_trunc.shape == (self.num_envs,), contact_trunc.shape
 
             if self.log_jacobians:
-                i = self.step_count + int(torch.sum(rollout_len).item())
-                self.cfs.append(cf_norm)
-                self.writer.add_scalar("contact_forces", cf_norm, i)
-
-                if jac_norm:
-                    self.jacs.append(jac_norm)
-                    self.writer.add_scalar("jacobian", jac_norm, i)
-                    self.writer.add_scalar("jacobian_acc", np.sum(jac_buffer), i)
+                k = self.step_count + int(torch.sum(rollout_len).item())
+                self.writer.add_scalar("contact_forces", cfs_buffer[i], k)
 
             real_obs = info["obs_before_reset"]
 
@@ -417,14 +408,14 @@ class AHAC2:
             # TODO this below used to be done_env_ids which I now changed to grad_done_env_ids
             #   unsure if this is correct so need to get back to this later
             gamma[grad_done_env_ids] = 1.0
-            jac_buffer[i + 1, grad_done_env_ids] = 0.0
+            cfs_buffer[0:i, grad_done_env_ids] = 0.0
             rew_acc[i + 1, grad_done_env_ids] = 0.0
 
             # collect data for critic training
             with torch.no_grad():
                 self.rew_buf[i] = rew.clone()
                 if i < self.steps_num - 1:
-                    self.done_mask[i] = done.clone().to(torch.float32)
+                    self.done_mask[i] = grad_done.clone().to(torch.float32)
                 else:
                     self.done_mask[i, :] = 1.0
                 self.next_values[i] = next_values[i + 1].clone()
@@ -529,12 +520,12 @@ class AHAC2:
             episode_gamma *= self.gamma
             if len(done_env_ids) > 0:
                 for done_env_id in done_env_ids:
-                    print(
-                        "loss = {:.2f}, len = {}".format(
-                            episode_loss[done_env_id].item(),
-                            episode_length[done_env_id],
-                        )
-                    )
+                    # print(
+                    #     "loss = {:.2f}, len = {}".format(
+                    #         episode_loss[done_env_id].item(),
+                    #         episode_length[done_env_id],
+                    #     )
+                    # )
                     episode_loss_his.append(episode_loss[done_env_id].item())
                     episode_discounted_loss_his.append(
                         episode_discounted_loss[done_env_id].item()
@@ -746,6 +737,14 @@ class AHAC2:
 
             self.time_report.end_timer("critic training")
 
+            # reset buffers correctly for next iteration
+            self.obs_buf.zero_()
+            self.rew_buf.zero_()
+            self.done_mask.zero_()
+            self.next_values.zero_()
+            self.target_values.zero_()
+            self.ret.zero_()
+
             self.iter_count += 1
 
             time_end_epoch = time.time()
@@ -806,7 +805,7 @@ class AHAC2:
                 mean_episode_length = 0
 
             print(
-                "iter {:}/{:}, ep loss {:.2f}, ep discounted loss {:.2f}, ep len {:.1f}, avg rollout {:.1f}, total steps {:}, fps {:.2f}, value loss {:.2f}, contact/horizon/end {:}/{:}/{:}, grad norm before/after clip {:.2f}/{:.2f}".format(
+                "iter {:}/{:}, ep loss {:.2f}, ep discounted loss {:.2f}, ep len {:.1f}, avg rollout {:.1f}, total steps {:}, fps {:.2f}, value loss {:.2f}, contact/horizon/term/end {:}/{:}/{:}/{:}, grad norm before/after clip {:.2f}/{:.2f}".format(
                     self.iter_count,
                     self.max_epochs,
                     mean_policy_loss,
@@ -818,6 +817,7 @@ class AHAC2:
                     self.value_loss,
                     self.contact_trunc,
                     self.horizon_trunc,
+                    self.early_termination,
                     self.episode_end,
                     self.grad_norm_before_clip,
                     self.grad_norm_after_clip,
@@ -882,7 +882,7 @@ class AHAC2:
 
     def log_scalar(self, scalar, value):
         """Helper method for consistent logging"""
-        self.writer.add_scalar(f"{scalar}", value, self.iter_count)
+        self.writer.add_scalar(f"{scalar}", value, self.step_count)
 
     def close(self):
         self.writer.close()

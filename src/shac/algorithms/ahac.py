@@ -860,7 +860,7 @@ class AHAC:
             os.path.join(self.log_dir, "{}.pt".format(filename)),
         )
 
-    def load(self, path, actor=False):
+    def load(self, path, actor=True):
         print("Loading policy from", path)
         checkpoint = torch.load(path)
         if actor:

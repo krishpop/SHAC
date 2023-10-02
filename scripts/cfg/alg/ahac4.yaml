@@ -1,4 +1,4 @@
-_target_: shac.algorithms.shac.SHAC
+_target_: shac.algorithms.ahac4.AHAC4
 _recursive_: False
 actor_config:
   _target_: shac.models.actor.ActorStochasticMLP
@@ -10,8 +10,8 @@ critic_config:
   activation: elu
 actor_lr: ${resolve_child:2e-3,${env.shac},actor_lr}
 critic_lr: ${resolve_child:2e-3,${env.shac},critic_lr}
+h_lr: 1e-4
 lr_schedule: linear
-target_critic_alpha: ${resolve_child:0.2,${env.shac},target_critic_alpha}
 obs_rms: True
 ret_rms: False
 critic_iterations: 16
@@ -20,7 +20,9 @@ critic_method: td-lambda # ('td-lambda', 'one-step')
 lam: 0.95
 gamma: 0.99
 max_epochs: ${resolve_child:2000,${env.shac},max_epochs}
-steps_num: ${resolve_child:32,${env.shac},steps_num}
+steps_min: 4
+steps_max: 64
+contact_threshold: 300
 grad_norm: 1.0
 critic_grad_norm: 1.0
 save_interval: ${resolve_child:400,${env.shac},save_interval}

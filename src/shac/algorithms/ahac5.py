@@ -138,6 +138,10 @@ class AHAC5:
             os.makedirs(self.log_dir, exist_ok=True)
             self.writer = SummaryWriter(os.path.join(self.log_dir, "log"))
 
+        # temporary load policy
+        # path = "/home/ignat/git/SHAC/scripts/multirun/2023-09-27/16-37-21/0/logs/AHAC5_HopperEnvpolicy_iter300_reward5068.094.pt"
+        # self.load(path, actor=True)
+
         # Create actor and critic
         self.actor = instantiate(
             actor_config,
@@ -220,7 +224,7 @@ class AHAC5:
         }
 
         # temporary load policy
-        # path = "/nethome/igeorgiev3/flash/git/SHAC/scripts/multirun/2023-09-09/18-33-37/0/logs/AHAC2_HopperEnvpolicy_iter500_reward5195.418.pt"
+        # path = "/home/ignat/git/SHAC/good-shit/AHAC2_HopperEnvpolicy_iter500_reward5195.418.pt"
         # self.load(path, actor=False)
 
         # timer
@@ -622,8 +626,12 @@ class AHAC5:
                     param_group["lr"] = critic_lr
 
                 h_lr = (1e-5 - self.h_lr) * epoch / self.max_epochs + self.h_lr
+                lambd_lr = (
+                    1e-6 - self.lambd_lr
+                ) * epoch / self.max_epochs + self.lambd_lr
             else:
                 lr = self.actor_lr
+                lambd_lr = self.lambd_lr
                 h_lr = self.h_lr
 
             # train actor
@@ -662,6 +670,7 @@ class AHAC5:
                     training_critic_loss.backward()
 
                     # ugly fix for simulation nan problem
+                    # TODO do we need this?
                     for params in self.critic.parameters():
                         params.grad.nan_to_num_(0.0, 0.0, 0.0)
 
@@ -674,12 +683,12 @@ class AHAC5:
                     batch_cnt += 1
 
                 total_critic_loss /= batch_cnt
+                last_losses.append(total_critic_loss.item())
                 if self.critic_iterations is None and len(last_losses) == 5:
                     diff = abs(np.diff(last_losses).mean())
                     if diff < 2e-1:
                         iterations = j + 1
                         break
-                last_losses.append(total_critic_loss.item())
 
                 self.value_loss = total_critic_loss
                 print(
@@ -697,11 +706,11 @@ class AHAC5:
             self.H = torch.clip(self.H, self.steps_min, self.steps_max)
 
             # train lambda
-            self.lambd += self.lambd_lr * (self.H - self.steps_min)
+            self.lambd += lambd_lr * (self.H - self.steps_min)
 
             # printing for debugging purposes
-            rew_w = (-self.ret / self.H).mean().item()
-            constraint_w = (-self.lambd * self.H).item()
+            # rew_w = (-self.ret / self.H).mean().item()
+            # constraint_w = (-self.lambd * self.H).item()
             # print(f"weights reward {rew_w:.2f}  constraint {constraint_w:.2f}")
             # print(f"H={self.H.item():.2f}, lambda={self.lambd.item():.2f}")
 

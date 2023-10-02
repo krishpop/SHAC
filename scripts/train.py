@@ -177,10 +177,7 @@ def train(cfg: DictConfig):
             yaml.dump(cfg_train, open(os.path.join(logdir, "cfg.yaml"), "w"))
 
         # register envs with the correct number of actors for PPO
-        if cfg.alg.name == "ppo":
-            cfg["env"]["config"]["num_envs"] = cfg["env"]["ppo"]["num_actors"]
-        else:
-            cfg["env"]["config"]["num_envs"] = cfg["env"]["sac"]["num_actors"]
+        cfg["env"]["config"]["num_envs"] = cfg["env"][cfg.alg.name]["num_actors"]
         register_envs(cfg.env)
 
         # add observer to score keys

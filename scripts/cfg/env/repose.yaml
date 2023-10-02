@@ -20,6 +20,7 @@ config:
   num_envs: 64
   episode_length: 250
   render: ${general.render}
+  no_grad: ???
   reward_params: 
     action_penalty: ${env.rewards.action_penalty}
     object_pos_err: ${env.rewards.object_pos_err}
@@ -33,6 +34,19 @@ config:
   # use_graph_capture: ${eval:'("shac" not in "${alg.name}")'}
   # no_grad: ${eval:'("shac" not in "${alg.name}")'}
 
+shac:
+  steps_num: 16
+  actor_lr: 2e-3
+  critic_lr: 4e-3
+  actor: ActorStochasticMLP # ActorDeterministicMLP
+  actor_mlp:
+    units: [128, 64, 32]
+    activation: elu
+
+  critic: CriticMLP
+  critic_mlp:
+    units: [64, 64]
+    activation: elu
 
 ppo:
   max_epochs: 5000

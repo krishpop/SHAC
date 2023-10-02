@@ -19,7 +19,6 @@ shac:
   actor_lr: 2e-3
   critic_lr: 4e-3
   max_epochs: 500
-  betas: [0.7, 0.95]
   actor_mlp:
     units: [128, 64, 32]
   critic_mlp:
@@ -30,13 +29,25 @@ ahac:
   actor_lr: 2e-3
   critic_lr: 4e-3
   max_epochs: 500
-  jacobian_norm: 1.0
-  grad_norm: null
+  # jacobian_norm: 1.0
+  # grad_norm: null
   actor_mlp:
     units: [128, 64, 32]
   critic_mlp:
     units: [64, 64]
   save_interval: 100
+
+ahac5:
+  actor_lr: 2e-3
+  critic_lr: 4e-3
+  h_lr: 1e-2
+  max_epochs: 500
+  actor_mlp:
+    units: [128, 64, 32]
+  critic_mlp:
+    units: [64, 64]
+  save_interval: 100
+
 
 ppo:
   max_epochs: 200
