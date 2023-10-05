@@ -23,7 +23,6 @@ config:
   object_type: ${object:octprism}
   goal_type: ${goal:orientation}
   reward_type: ${reward:delta}
-  debug: ${debug}
 
 shac:
   steps_num: 25
